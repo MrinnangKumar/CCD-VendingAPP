@@ -2125,6 +2125,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Loader from './Components/Loader';
 import FastImage from 'react-native-fast-image';
 
+// Define TypeScript types for DocumentPickerResult
+type DocumentPickerSuccessResult = {
+  type: 'success';
+  uri: string;
+  name: string;
+  mimeType: string;
+  size: number;
+};
+
+type DocumentPickerResult = DocumentPicker.DocumentPickerResult & DocumentPickerSuccessResult;
+
 const DetailScreen: React.FC = ({ route }) => {
   const { empid, machineNo, customerName, capturedImage = '' } = route.params;
   const decodedImageUri = decodeURIComponent(capturedImage);
@@ -2244,23 +2255,23 @@ const DetailScreen: React.FC = ({ route }) => {
     }
   };
 
+  // Updated handleSelectDocument function
   const handleSelectDocument = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({});
-
-      if (result && result.type === 'success') {
+      const result: DocumentPickerResult = await DocumentPicker.getDocumentAsync({});
+      if (result.type === 'success') {
         const fileInfo = await FileSystem.getInfoAsync(result.uri);
         setDocument({
           uri: result.uri,
           name: result.name,
           mimeType: result.mimeType || 'application/octet-stream',
-          size: fileInfo.size,
+          size: fileInfo.exists ? fileInfo.size : 0,
         });
         console.log('Document selected:', {
           uri: result.uri,
           name: result.name,
           mimeType: result.mimeType,
-          size: fileInfo.size,
+          size: fileInfo.exists ? fileInfo.size : 0
         });
       } else {
         console.log('Document selection was canceled.');
@@ -2269,6 +2280,7 @@ const DetailScreen: React.FC = ({ route }) => {
       console.error('Error selecting document:', error);
     }
   };
+
 
   return (
     <View style={styles.container}>
@@ -2307,7 +2319,7 @@ const DetailScreen: React.FC = ({ route }) => {
         <TouchableOpacity style={styles.btn} onPress={handleSelectDocument}>
           <Text style={styles.btnText}>Insert Document</Text>
         </TouchableOpacity>
-        {document ? (
+        {/* {document ? (
           <View style={styles.documentContainer}>
             <Text style={styles.documentText}>
               Selected Document: {document.name}
@@ -2316,7 +2328,14 @@ const DetailScreen: React.FC = ({ route }) => {
               <Text style={styles.btnText}>Cancel Document</Text>
             </TouchableOpacity>
           </View>
-        ) : null}
+        ) : null} */}
+        {document && (
+          <View style={styles.documentContainer}>
+            <Text style={styles.documentText}>
+              Selected Document: {document.name}
+            </Text>
+          </View>
+        )}
       </View>
 
       <TouchableOpacity style={styles.btn} onPress={handleSubmit}>
