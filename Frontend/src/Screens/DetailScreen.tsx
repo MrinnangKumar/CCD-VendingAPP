@@ -2125,18 +2125,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Loader from './Components/Loader';
 import FastImage from 'react-native-fast-image';
 
-// Define TypeScript types for DocumentPickerResult
-type DocumentPickerSuccessResult = {
-  type: 'success';
-  uri: string;
-  name: string;
-  mimeType: string;
-  size: number;
+
+// Define a type that matches the actual DocumentPickerResult type
+type DocumentPickerResult = DocumentPicker.DocumentPickerResult & {
+  uri?: string; // uri might be optional
+  name?: string; // name might be optional
+  mimeType?: string; // mimeType might be optional
 };
 
-type DocumentPickerResult = DocumentPicker.DocumentPickerResult & DocumentPickerSuccessResult;
-
-const DetailScreen: React.FC = ({ route }) => {
+const DetailScreen: React.FC<any> = ({ route }) => { // Adjusted type to `any` for route
   const { empid, machineNo, customerName, capturedImage = '' } = route.params;
   const decodedImageUri = decodeURIComponent(capturedImage);
   const navigation = useNavigation();
@@ -2145,7 +2142,7 @@ const DetailScreen: React.FC = ({ route }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [remarks, setRemarks] = useState<string>('');
   const [photo, setPhoto] = useState<string | null>(decodedImageUri || null);
-  const [document, setDocument] = useState<any | null>(null);
+  const [document, setDocument] = useState<DocumentPicker.DocumentPickerResult | null>(null);
 
   useEffect(() => {
     const loadSavedData = async () => {
@@ -2209,7 +2206,7 @@ const DetailScreen: React.FC = ({ route }) => {
   const handleSubmit = async () => {
     if (validate()) {
       setLoading(true);
-      saveData();
+      await saveData();
       console.log('Remarks submitted:', remarks);
 
       const formData = new FormData();
@@ -2223,11 +2220,11 @@ const DetailScreen: React.FC = ({ route }) => {
         formData.append('photo', `data:image/png;base64,${file}`);
       }
 
-      if (document) {
+      if (document && document.type === 'success') {
         formData.append('document', {
           uri: document.uri,
           name: document.name,
-          type: document.mimeType,
+          type: document.mimeType || 'application/octet-stream',
         });
       }
 
@@ -2255,24 +2252,25 @@ const DetailScreen: React.FC = ({ route }) => {
     }
   };
 
-  // Updated handleSelectDocument function
   const handleSelectDocument = async () => {
     try {
-      const result: DocumentPickerResult = await DocumentPicker.getDocumentAsync({});
+      // Get the document
+      const result = await DocumentPicker.getDocumentAsync({});
+      console.log('Document selected:', result);
+  
       if (result.type === 'success') {
-        const fileInfo = await FileSystem.getInfoAsync(result.uri);
-        setDocument({
-          uri: result.uri,
-          name: result.name,
-          mimeType: result.mimeType || 'application/octet-stream',
-          size: fileInfo.exists ? fileInfo.size : 0,
-        });
-        console.log('Document selected:', {
-          uri: result.uri,
-          name: result.name,
-          mimeType: result.mimeType,
-          size: fileInfo.exists ? fileInfo.size : 0
-        });
+        // Check if result has uri and name
+        if (result.uri && result.name) {
+          const fileInfo = await FileSystem.getInfoAsync(result.uri);
+          setDocument({
+            uri: result.uri,
+            name: result.name,
+            mimeType: result.mimeType || 'application/octet-stream',
+            size: fileInfo.exists ? fileInfo.size : 0, // Correctly use fileInfo.size
+          });
+        } else {
+          console.log('Document result is missing required properties.');
+        }
       } else {
         console.log('Document selection was canceled.');
       }
@@ -2280,7 +2278,6 @@ const DetailScreen: React.FC = ({ route }) => {
       console.error('Error selecting document:', error);
     }
   };
-
 
   return (
     <View style={styles.container}>
@@ -2319,7 +2316,7 @@ const DetailScreen: React.FC = ({ route }) => {
         <TouchableOpacity style={styles.btn} onPress={handleSelectDocument}>
           <Text style={styles.btnText}>Insert Document</Text>
         </TouchableOpacity>
-        {/* {document ? (
+        {document && document.type === 'success' && (
           <View style={styles.documentContainer}>
             <Text style={styles.documentText}>
               Selected Document: {document.name}
@@ -2327,13 +2324,6 @@ const DetailScreen: React.FC = ({ route }) => {
             <TouchableOpacity style={styles.btn} onPress={handleCancelDocument}>
               <Text style={styles.btnText}>Cancel Document</Text>
             </TouchableOpacity>
-          </View>
-        ) : null} */}
-        {document && (
-          <View style={styles.documentContainer}>
-            <Text style={styles.documentText}>
-              Selected Document: {document.name}
-            </Text>
           </View>
         )}
       </View>
@@ -2402,3 +2392,4 @@ const styles = StyleSheet.create({
 });
 
 export default DetailScreen;
+
