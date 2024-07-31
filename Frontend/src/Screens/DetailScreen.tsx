@@ -2127,10 +2127,11 @@ import FastImage from 'react-native-fast-image';
 
 
 // Define a type that matches the actual DocumentPickerResult type
-type DocumentPickerResult = DocumentPicker.DocumentPickerResult & {
-  uri?: string; // uri might be optional
-  name?: string; // name might be optional
-  mimeType?: string; // mimeType might be optional
+type DocumentPickerResult = {
+  type: string; // or 'success' | 'cancel' if you know the possible values
+  uri?: string;
+  name?: string;
+  mimeType?: string;
 };
 
 const DetailScreen: React.FC<any> = ({ route }) => { // Adjusted type to `any` for route
@@ -2254,19 +2255,20 @@ const DetailScreen: React.FC<any> = ({ route }) => { // Adjusted type to `any` f
 
   const handleSelectDocument = async () => {
     try {
-      // Get the document
-      const result = await DocumentPicker.getDocumentAsync({});
+      const result: DocumentPickerResult = await DocumentPicker.getDocumentAsync({});
       console.log('Document selected:', result);
   
+      // Check the result object directly
+      console.log('Result object structure:', result);
+  
       if (result.type === 'success') {
-        // Check if result has uri and name
         if (result.uri && result.name) {
           const fileInfo = await FileSystem.getInfoAsync(result.uri);
           setDocument({
             uri: result.uri,
             name: result.name,
             mimeType: result.mimeType || 'application/octet-stream',
-            size: fileInfo.exists ? fileInfo.size : 0, // Correctly use fileInfo.size
+            size: fileInfo.exists ? fileInfo.size : 0,
           });
         } else {
           console.log('Document result is missing required properties.');
