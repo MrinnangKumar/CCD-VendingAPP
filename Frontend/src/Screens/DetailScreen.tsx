@@ -2204,82 +2204,98 @@ const DetailScreen: React.FC<any> = ({ route }) => { // Adjusted type to `any` f
     await AsyncStorage.removeItem(`document_${empid}`);
   };
 
-  const handleSubmit = async () => {
-    if (validate()) {
-      setLoading(true);
-      await saveData();
-      console.log('Remarks submitted:', remarks);
 
-      const formData = new FormData();
-      formData.append('empid', empid);
-      formData.append('machineNo', machineNo);
-      formData.append('customerName', customerName);
-      formData.append('remarks', remarks);
-
-      if (photo) {
-        const file = await FileSystem.readAsStringAsync(photo, { encoding: FileSystem.EncodingType.Base64 });
-        formData.append('photo', `data:image/png;base64,${file}`);
-      }
-
-      if (document && document.type === 'success') {
-        formData.append('document', {
-          uri: document.uri,
-          name: document.name,
-          type: document.mimeType || 'application/octet-stream',
-        });
-      }
-
-      try {
-        const response = await fetch('http://192.168.1.48:8000/api/docs/uploadDocument', {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-
-        const data = await response.json();
-        console.log('Document upload response:', data);
-
-        if (response.ok) {
-          console.log('Document uploaded successfully.');
-        } else {
-          console.error('Document upload failed.');
-        }
-      } catch (error) {
-        console.error('Error uploading document:', error);
-      }
-      setLoading(false);
-    }
-  };
-
-  const handleSelectDocument = async () => {
+  //! From YT video
+  const pickSomething = async () =>{
     try {
-      const result: DocumentPickerResult = await DocumentPicker.getDocumentAsync({});
-      console.log('Document selected:', result);
-  
-      // Check the result object directly
-      console.log('Result object structure:', result);
-  
-      if (result.type === 'success') {
-        if (result.uri && result.name) {
-          const fileInfo = await FileSystem.getInfoAsync(result.uri);
-          setDocument({
-            uri: result.uri,
-            name: result.name,
-            mimeType: result.mimeType || 'application/octet-stream',
-            size: fileInfo.exists ? fileInfo.size : 0,
-          });
-        } else {
-          console.log('Document result is missing required properties.');
-        }
-      } else {
-        console.log('Document selection was canceled.');
-      }
-    } catch (error) {
-      console.error('Error selecting document:', error);
+      const docRes = await DocumentPicker.getDocumentAsync({
+        type: "/*",
+      });
+      console.log(docRes);
+      
     }
-  };
+    catch(error){
+      console.log("Error while uploading the document: ", error);
+    }
+  }
+  // const handleSubmit = async () => {
+    
+  //   if (validate()) {
+  //     setLoading(true);
+  //     await saveData();
+  //     console.log('Remarks submitted:', remarks);
+
+  //     const formData = new FormData();
+  //     formData.append('empid', empid);
+  //     formData.append('machineNo', machineNo);
+  //     formData.append('customerName', customerName);
+  //     formData.append('remarks', remarks);
+
+  //     if (photo) {
+  //       const file = await FileSystem.readAsStringAsync(photo, { encoding: FileSystem.EncodingType.Base64 });
+  //       formData.append('photo', `data:image/png;base64,${file}`);
+  //     }
+
+  //     if (document && document.type === 'success') {
+  //       formData.append('document', {
+  //         uri: document.uri,
+  //         name: document.name,
+  //         type: document.mimeType || 'application/octet-stream',
+  //       });
+  //     }
+
+  //     try {
+  //       const response = await fetch('http://192.168.1.48:8000/api/docs/uploadDocument', {
+  //         method: 'POST',
+  //         body: formData,
+  //         headers: {
+  //           'Content-Type': 'multipart/form-data',
+  //         },
+  //       });
+
+  //       const data = await response.json();
+  //       console.log('Document upload response:', data);
+
+  //       if (response.ok) {
+  //         console.log('Document uploaded successfully.');
+  //       } else {
+  //         console.error('Document upload failed.');
+  //       }
+  //     } catch (error) {
+  //       console.error('Error uploading document:', error);
+  //     }
+  //     setLoading(false);
+  //   }
+  // };
+
+  // const handleSelectDocument = async () => {
+  //   try {
+  //     const result: DocumentPickerResult = await DocumentPicker.getDocumentAsync({});
+  //     console.log('Document selected:', result);
+  
+  //     // Check the result object directly
+  //     console.log('Result object structure:', result);
+  
+  //     if (result.type === 'success') {
+  //       if (result.uri && result.name) {
+  //         const fileInfo = await FileSystem.getInfoAsync(result.uri);
+  //         setDocument({
+  //           uri: result.uri,
+  //           name: result.name,
+  //           mimeType: result.mimeType || 'application/octet-stream',
+  //           size: fileInfo.exists ? fileInfo.size : 0,
+  //         });
+  //       } else {
+  //         console.log('Document result is missing required properties.');
+  //       }
+  //     } else {
+  //       console.log('Document selection was canceled.');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error selecting document:', error);
+  //   }
+
+  // };
 
   return (
     <View style={styles.container}>
@@ -2315,10 +2331,10 @@ const DetailScreen: React.FC<any> = ({ route }) => { // Adjusted type to `any` f
       )}
 
       <View style={styles.sectionContainer}>
-        <TouchableOpacity style={styles.btn} onPress={handleSelectDocument}>
+        <TouchableOpacity style={styles.btn} onPress={pickSomething}>
           <Text style={styles.btnText}>Insert Document</Text>
         </TouchableOpacity>
-        {document && document.type === 'success' && (
+        {/* {document && document.type === 'success' && (
           <View style={styles.documentContainer}>
             <Text style={styles.documentText}>
               Selected Document: {document.name}
@@ -2327,7 +2343,7 @@ const DetailScreen: React.FC<any> = ({ route }) => { // Adjusted type to `any` f
               <Text style={styles.btnText}>Cancel Document</Text>
             </TouchableOpacity>
           </View>
-        )}
+        )} */}
       </View>
 
       <TouchableOpacity style={styles.btn} onPress={handleSubmit}>
